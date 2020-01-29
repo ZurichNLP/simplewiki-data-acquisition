@@ -2,62 +2,28 @@
 # -*- coding: utf-8 -*-
 # Author: Nicolas Spring
 
-import argparse
 import csv
+import mysql.connector
 import os
+import pathos.multiprocessing as mp
 import re
 import spacy
 import sys
-import pathos.multiprocessing as mp
-import mysql.connector
 
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', type=str,
-                        help='a folder the WikiExtractor outputs.',
-                        metavar='PATH', required=True)
-    parser.add_argument('-m', '--match', type=str,
-                        help='output file for articles with a match. ' +\
-                        'If no --match-lang is provided, all output will be written to this file.',
-                        metavar='PATH', default=sys.stdout)
-    parser.add_argument('-n', '--no-match', type=str,
-                        help='output file for articles with no match.',
-                        metavar='PATH', default=None)
-    parser.add_argument('-p', '--processes', type=int,
-                        help='the number of processes to be run in parallel.',
-                        default=mp.cpu_count(), metavar='INT')
-    parser.add_argument('-f', '--files', type=int,
-                        help='the number of files handled per process before writing to the output file.',
-                        default=1, metavar='INT')
-    parser.add_argument('--input-lang', type=str, metavar='STRING',
-                        help='the language of the input files (en/de)',
-                        choices=['de', 'en'], default='en')
-    parser.add_argument('--match-lang', type=str, metavar='STRING', default=None,
-                        help='the Wikipedia language code for title matches.')
-    parser.add_argument('--db-user', type=str, metavar='STRING',
-                        help='the mysql databank user with access to the langlinks table.')
-    parser.add_argument('--db-host', type=str, metavar='STRING',
-                        help='the host of the databank containing the langlinks table.')
-    parser.add_argument('--db-database', type=str, metavar='STRING',
-                        help='the mysql database containing the langlinks table.')
-    parser.add_argument('-v' ,'--verbose', type=int, metavar='INT',
-                        help='the verbosity level of the DocumentParser.', default=1)
-    args = parser.parse_args()
-    return args
+from typing import Dict, List, Tuple
 
 
 class DocumentParser(object):
 
     def __init__(self, model,
-                       input_dir,
-                       match_file,
-                       match_lang=None,
-                       no_match_file=None,
-                       mysql_dict=None,
-                       n_processes=mp.cpu_count(),
-                       n_files=1,
-                       verbose=1):
+                       input_dir: str,
+                       match_file: str,
+                       match_lang: str = None,
+                       no_match_file: str = None,
+                       mysql_dict: Dict = None,
+                       n_processes: int = mp.cpu_count(),
+                       n_files: int = 1,
+                       verbose: int = 1):
         '''
         Args:
         model           a spacy model used to tokenize text into sentences.
@@ -97,8 +63,12 @@ class DocumentParser(object):
             cnx.close()
             self._debug('langlinks table can be accessed.')
 
+        # emptying output files
+        open(self.match_file, 'w').close()
+        if self.find_corresponding_article_title:
+            open(no_match_file, 'w').close()
 
-    def parse_documents(self):
+    def parse_documents(self) -> Dict[str, int]:
         '''
         parses the documents and writes the parsed line into tsv files.
         '''
@@ -108,23 +78,34 @@ class DocumentParser(object):
         no_match_results = []
         for chunk in self.chunks:
             with mp.Pool(processes=self.n_processes) as pool:
-                results = pool.starmap(self._parse_document_file, [(file,) for file in chunk])
+                results = pool.starmap_async(self._parse_document_file, [(file,) for file in chunk])
+                results = results.get()
             for file in results:
                 match_results += file[0]
                 no_match_results += file[1]
             self._write_output_tsv(self.match_file, match_results)
             if self.find_corresponding_article_title:
                 self._write_output_tsv(self.no_match_file, no_match_results)
+            match_results = []
+            no_match_results = []
             done += len(chunk)
             self._debug(f'Parsed {done}/{len(self.all_files)} files.')
-
+        column_dict = {'article_id':0,
+                       'section_id':1,
+                       'sent_id':2,
+                       'orig_url':3,
+                       'orig_title':4,
+                       'orig_section':5,
+                       'orig_sent':6,
+                       'other_title':7}
+        return column_dict
 
     def _create_chunks(self):
         '''
         creates chunks of file names of size n_processes*n_files.
         '''
         self.all_files = [os.path.join(root, file) for root, _, files in os.walk(self.input_dir) for file in files]
-        self._debug(f'Number of files found:\t{len(self.all_files)}', spacing='\n'*3)
+        self._debug(f'Number of files found:\t{len(self.all_files)}')
         self._debug(f'Trying to create chunks of size {self.n_processes*self.n_files} ' + \
                     f'({self.n_files} file(s) each for {self.n_processes} processes)...')
         chunk_size = self.n_processes * self.n_files
@@ -132,8 +113,7 @@ class DocumentParser(object):
                       for i in range((len(self.all_files) + chunk_size - 1) // chunk_size)]
         self._debug(f'Created {len(self.chunks)} chunk(s).')
 
-
-    def _parse_document_file(self, doc_file):
+    def _parse_document_file(self, doc_file: str) -> Tuple[List[Tuple[str]], List[Tuple[str]]]:
         '''
         extracts lines and metadata from raw articles and generates lines ready for output.
         '''
@@ -145,8 +125,7 @@ class DocumentParser(object):
         cnx.close()
         return match_lines, no_match_lines
 
-
-    def _extract_articles(self, doc_file):
+    def _extract_articles(self, doc_file: str) -> List[Tuple[Dict[str, str], str]]:
         '''
         opens a file in medialab document format and returns tuples of metadata and lines
         '''
@@ -167,8 +146,11 @@ class DocumentParser(object):
                     contents += line
         return articles
 
-
-    def _generate_lines(self, articles, model, match_lang, cursor):
+    def _generate_lines(self,
+                        articles: List[Tuple[Dict[str, str], str]],
+                        model,
+                        match_lang: str,
+                        cursor) -> Tuple[List[Tuple[str]], List[Tuple[str]]]:
         '''
         generates tuples representing lines in a final output file
         '''
@@ -205,8 +187,7 @@ class DocumentParser(object):
                 match_lines += [tuple(l) for l in lines]
         return match_lines, no_match_lines
 
-
-    def _find_other_lang_title(self, article_id, cursor, match_lang):
+    def _find_other_lang_title(self, article_id: str, cursor, match_lang: str) -> str:
         '''
         queries the langlinks table for the title of a specific article in another language
         '''
@@ -215,50 +196,19 @@ class DocumentParser(object):
         results = cursor.fetchall()
         return results[0][2] if len(results) > 0 else None
 
-
-    def _write_output_tsv(self, outfile, lines):
+    def _write_output_tsv(self, outfile: str, lines: List[Tuple[str]]):
         '''
         writes the tuples (each representing a line) in a list into a tsv
         '''
-        if outfile != sys.stdout:
-            with open(outfile, 'w', encoding='utf8') as outfile:
-                writer = csv.writer(outfile, delimiter='\t', quotechar="'")
-                for line in lines:
-                    writer.writerow(line)
-        else:
+        with open(outfile, 'a', encoding='utf8') as outfile:
             writer = csv.writer(outfile, delimiter='\t', quotechar="'")
             for line in lines:
                 writer.writerow(line)
 
-
-    def _debug(self, message, level=1, prefix='INFO:\t', spacing='', end_spacing=''):
+    def _debug(self, message: str, level: int = 1, prefix: str = 'INFO:\t', spacing: str = '', end_spacing: str = ''):
         '''
         prints debug messages according to the verbosity level.
         '''
         if self.verbose >= level:
             output = sys.stderr if not self.verbose > 50 else sys.stdout
             print(spacing + prefix + message + end_spacing, file=output)
-
-    
-
-def main(args: argparse.Namespace):
-    spacy_model = spacy.load('en_core_web_sm') if args.input_lang == 'en' else spacy.load('de_core_news_sm')
-    databank_login = {'user':args.db_user, 'host':args.db_host, 'database':args.db_database}
-    doc_parser = DocumentParser(spacy_model,
-                                args.input,
-                                args.match,
-                                match_lang=args.match_lang,
-                                no_match_file=args.no_match,
-                                mysql_dict=databank_login,
-                                n_processes=args.processes,
-                                n_files=args.files,
-                                verbose=args.verbose)
-    doc_parser.parse_documents()
-
-
-
-        
-
-if __name__ == '__main__':
-    args = parse_args()
-    main(args)
