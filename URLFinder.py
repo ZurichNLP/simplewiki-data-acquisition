@@ -66,9 +66,9 @@ class URLFinder(object):
             try:
                 url_list.append(self.url_dict[row[column_idx]])
             except KeyError:
+                url_list.append('NOT_FOUND')
                 if row[column_idx] not in warned:
                     self._debug(f'Could not find the URL for article title "{row[column_idx]}".', prefix='WARNING:\t')
-                    url_list.append(None)
                     warned.append(row[column_idx])
         self.df_url = self.df.copy()
         self.df_url.insert(column_idx+1, column_idx+1, pd.Series(url_list))

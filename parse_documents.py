@@ -63,12 +63,12 @@ def main(args: argparse.Namespace):
                                 n_processes=args.processes,
                                 n_files=args.files,
                                 verbose=args.verbose)
-    column_id_dict = doc_parser.parse_documents()
+    doc_parser.parse_documents()
 
     # adding a column with URLs of articles in the other language
     finder = URLFinder(verbose=args.verbose)
     finder.create_url_dict(args.input_urls)
-    finder.add_url_column(args.match, column_id_dict['other_title'], args.output_url_file)
+    finder.add_url_column(args.match, 7, args.output_url_file)
         
 
 if __name__ == '__main__':
