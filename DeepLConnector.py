@@ -3,19 +3,21 @@
 # Author: Nicolas Spring
 
 import requests
+import sys
 import urllib
 
 from typing import List
 
 class DeepLConnector(object):
 
-    def __init__(self, auth_key: str, verbose: int = 1):
+    def __init__(self, auth_key: str, save_path: str = None, verbose: int = 1):
         '''
         Args:
         auth_key    the authentification key to access the DeepL API.
         verbose     the verbosity level.
         '''
         self.url = 'https://api.deepl.com/v2/translate'
+        self.save_path = save_path
         self.verbose = verbose
         self.__auth_key = auth_key
 
@@ -31,6 +33,8 @@ class DeepLConnector(object):
         Returns:
         translated_sents    a list of translated sentences.
         '''
+        self._debug(f'Sentences to translate: {len(sents)}')
+        open(self.save_path, 'w').close()
         prog_info_every = len(sents) // 100
         done = 0
         reached = set()
@@ -39,13 +43,17 @@ class DeepLConnector(object):
         key = 'auth_key=' + self.__auth_key
         source = 'source_lang=' + source_lang
         target = 'target_lang=' + target_lang
+        splitting = 'split_sentences=0'
         for chunk in sent_chunks:
             sent_chunk = 'text=' + '&text='.join([urllib.parse.quote(sent) for sent in chunk])
-            get_url = '&'.join(['?'.join([self.url, key]), sent_chunk, source, target])
+            get_url = '&'.join(['?'.join([self.url, key]), sent_chunk, source, target, splitting])
             response = requests.get(get_url)
             json = response.json()
             tr_sents = [entry['text'] for entry in json['translations']]
             translated_sents += tr_sents
+            with open(self.save_path, 'a', encoding='utf8') as outfile:
+                for sent in tr_sents:
+                    outfile.write(sent + '\n')
             done += len(chunk)
             last = done - (done % prog_info_every)
             if last not in reached and last != 0:
@@ -60,13 +68,3 @@ class DeepLConnector(object):
         if self.verbose >= level:
             output = sys.stderr if not self.verbose > 50 else sys.stdout
             print(spacing + prefix + message + end_spacing, file=output)
-
-
-def main():
-    pass
-
-
-
-if __name__ == '__main__':
-    main()
-
