@@ -23,7 +23,7 @@ class DeepLConnector(object):
 
     def translate_sentences(self, sents: List[str], source_lang: str, target_lang: str) -> List[str]:
         '''
-        creates chunks of 50 sentences each and translates them using the DeepL API v2.
+        creates chunks of 25 sentences each and translates them using the DeepL API v2.
 
         Args:
         sents       a list of sentences to be translated.
@@ -35,11 +35,12 @@ class DeepLConnector(object):
         '''
         self._debug(f'Sentences to translate: {len(sents)}')
         open(self.save_path, 'w').close()
-        prog_info_every = len(sents) // 100
+        prog_info_every = len(sents) // 100 if len(sents) // 100 >= 1 else 1
         done = 0
         reached = set()
         translated_sents = []
-        sent_chunks = [sents[i * 50:(i+1) * 50] for i in range((len(sents) + 50 - 1) // 50)]
+        chunk_size = 25
+        sent_chunks = [sents[i * chunk_size:(i+1) * chunk_size] for i in range((len(sents) + chunk_size - 1) // chunk_size)]
         key = 'auth_key=' + self.__auth_key
         source = 'source_lang=' + source_lang
         target = 'target_lang=' + target_lang
@@ -48,6 +49,7 @@ class DeepLConnector(object):
             sent_chunk = 'text=' + '&text='.join([urllib.parse.quote(sent) for sent in chunk])
             get_url = '&'.join(['?'.join([self.url, key]), sent_chunk, source, target, splitting])
             response = requests.get(get_url)
+            self._debug(f'Response: {response}', level=11)
             json = response.json()
             tr_sents = [entry['text'] for entry in json['translations']]
             translated_sents += tr_sents
