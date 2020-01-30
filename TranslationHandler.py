@@ -5,8 +5,6 @@
 import pandas as pd
 import sys
 
-from DummyConnector import DummyConnector
-
 class TranslationHandler(object):
 
     def __init__(self, verbose: int = 1):
@@ -16,7 +14,7 @@ class TranslationHandler(object):
         '''
         self.verbose = verbose
         self.source_df = None
-        self.translation_handler = None
+        self.api_connector = None
         self.translations = None
         self.translations_col_idx = None
         self.translations_trg_lan = None
@@ -28,26 +26,26 @@ class TranslationHandler(object):
         Args:
         file_path   the name of the input file.
         '''
-        self.source_df = pd.read_csv(file_path, sep='\t', quotechar="'", header=None)
+        self.source_df = pd.read_csv(file_path, sep='\t', quotechar='"', header=None)
         self._debug(f'Sucessfully read file {file_path}.')
 
-    def translate_column(self, col_idx: int, translation_handler, source_lang: str, target_lang: str):
+    def translate_column(self, col_idx: int, api_connector, source_lang: str, target_lang: str):
         '''
         Translates the content of a column from a provided source language into a provided target language
-        using a @param translation_handler.
+        using an @param api_connector.
 
 
         Args:
         col_idx             the column index in the DataFrame of the column to be translated.
-        translation_handler an instance that performs the translation. must implement a translate_sentences
+        api_connector       an instance that performs the translation. must implement a translate_sentences
                                 method that takes 3 arguments (sents: List[str], source_lang: str, target_lang: str)
                                 and returns a list of sentences.
         source_lang         the source language.
         target_lang         the target language.
         '''
-        self.translation_handler = translation_handler
+        self.api_connector = api_connector
         sents = list(self.source_df.iloc[:, col_idx])
-        self.translations = translation_handler.translate_sentences(sents, 'EN', 'DE')
+        self.translations = api_connector.translate_sentences(sents, 'EN', 'DE')
         self.translations_col_idx = col_idx
         self.translations_trg_lan = target_lang
         self._debug(f'Sucessfully translated {len(sents)} sentences.')
@@ -62,7 +60,7 @@ class TranslationHandler(object):
         '''
         parallel_df = pd.DataFrame(self.source_df.iloc[:, self.translations_col_idx])
         parallel_df.insert(1, self.translations_trg_lan, pd.Series(self.translations))
-        parallel_df.to_csv(outpath, sep='\t', quotechar="'", index=False, header=False)
+        parallel_df.to_csv(outpath, sep='\t', quotechar='"', index=False, header=False)
         self._debug(f'Parallel file with original sentences and translations was written to {outpath}.')
 
     def add_translation_column(self, outpath: str):
@@ -75,7 +73,7 @@ class TranslationHandler(object):
         '''
         all_df = self.source_df.copy()
         all_df.insert(len(all_df.columns), self.translations_trg_lan, pd.Series(self.translations))
-        all_df.to_csv(outpath, sep='\t', quotechar="'", index=False, header=False)
+        all_df.to_csv(outpath, sep='\t', quotechar='"', index=False, header=False)
         self._debug(f'A column with translations was added to the original file and written to {outpath}.')
 
     def _debug(self, message: str, level: int = 1, prefix: str = 'INFO:\t', spacing: str = '', end_spacing: str = ''):
@@ -85,20 +83,3 @@ class TranslationHandler(object):
         if self.verbose >= level:
             output = sys.stderr if not self.verbose > 50 else sys.stdout
             print(spacing + prefix + message + end_spacing, file=output)
-
-
-def main():
-    infile = './parsed_tsv/URLFinder_output/simplede_url.tsv'
-    parallel_outfile = './parsed_tsv/TranslationHandler_output/simple_de_parallel.tsv'
-    all_outfile = './parsed_tsv/TranslationHandler_output/simple_de_all.tsv'
-    dummy = DummyConnector('doesntmatter')
-
-    sent_handler = SentenceHandler()
-    sent_handler.read_tsv(infile)
-    sent_handler.translate_column(6, dummy, 'EN', 'DE')
-    sent_handler.write_parallel_file(parallel_outfile)
-    sent_handler.add_translation_column(all_outfile)
-
-
-if __name__ == '__main__':
-    main()

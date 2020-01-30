@@ -201,7 +201,7 @@ class DocumentParser(object):
         writes the tuples (each representing a line) in a list into a tsv
         '''
         with open(outfile, 'a', encoding='utf8') as outfile:
-            writer = csv.writer(outfile, delimiter='\t', quotechar="'")
+            writer = csv.writer(outfile, delimiter='\t', quotechar='"')
             for line in lines:
                 writer.writerow(line)
 

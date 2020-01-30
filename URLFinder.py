@@ -59,7 +59,7 @@ class URLFinder(object):
         self.input_file = input_file
         self.column_idx = column_idx
         self.output_file = output_file
-        self.df = pd.read_csv(input_file, sep='\t', quotechar="'", header=None)
+        self.df = pd.read_csv(input_file, sep='\t', quotechar='"', header=None)
         url_list = []
         warned = []
         for _, row in self.df.iterrows():
@@ -72,7 +72,7 @@ class URLFinder(object):
                     warned.append(row[column_idx])
         self.df_url = self.df.copy()
         self.df_url.insert(column_idx+1, column_idx+1, pd.Series(url_list))
-        self.df_url.to_csv(output_file, sep='\t', quotechar="'", index=False, header=False)
+        self.df_url.to_csv(output_file, sep='\t', quotechar='"', index=False, header=False)
         self._debug(f'Failed to find URLs for {len(warned)} articles.', prefix='WARNING\t')
         self._debug(f'Task completed and output saved to {output_file}.')
 
