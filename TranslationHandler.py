@@ -29,7 +29,11 @@ class TranslationHandler(object):
         self.source_df = pd.read_csv(file_path, sep='\t', quotechar='"', header=None)
         self._debug(f'Sucessfully read file {file_path}.')
 
-    def translate_column(self, col_idx: int, api_connector, source_lang: str, target_lang: str):
+    def translate_column(self,
+                         col_idx: int,
+                         api_connector: "implements translate_sentences(sents: List[str], source_lang: str, target_lang: str).",
+                         source_lang: str,
+                         target_lang: str):
         '''
         Translates the content of a column from a provided source language into a provided target language
         using an @param api_connector.

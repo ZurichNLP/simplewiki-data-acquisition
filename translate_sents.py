@@ -2,14 +2,13 @@
 # -*- coding: utf-8 -*-
 # Author: Nicolas Spring
 
-
 import argparse
 
 from TranslationHandler import TranslationHandler
 from DeepLConnector import DeepLConnector
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--column-index', type=int, default=6, metavar='INT',
                         help='An integer (starting at 0) signifying the index of the column' + \
@@ -27,9 +26,9 @@ def parse_args():
     parser.add_argument('--auth-key', type=str, metavar='STRING', required=True,
                         help='The authentication key for the DeepL API.')
     parser.add_argument('--source-lang', type=str, metavar='STRING', required=True,
-                        help='DeepL API Code for the source language (EN/DE/FR/ES/PT/IT/NL/PL/RU)')
+                        help='DeepL API language code for the source language (EN/DE/FR/ES/PT/IT/NL/PL/RU)')
     parser.add_argument('--target-lang', type=str, metavar='STRING', required=True,
-                        help='DeepL API Code for the target language (EN/DE/FR/ES/PT/IT/NL/PL/RU)')
+                        help='DeepL API language code for the target language (EN/DE/FR/ES/PT/IT/NL/PL/RU)')
     args = parser.parse_args()
     return args
 

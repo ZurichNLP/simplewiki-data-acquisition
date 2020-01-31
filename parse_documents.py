@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # Author: Nicolas Spring
 
-
 import argparse
 import pathos.multiprocessing as mp
 import spacy
@@ -11,7 +10,7 @@ from DocumentParser import DocumentParser
 from URLFinder import URLFinder
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--files', type=int,
                         help='The number of files handled per process before writing to the output file.',

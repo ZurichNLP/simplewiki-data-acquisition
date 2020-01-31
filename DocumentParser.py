@@ -10,12 +10,12 @@ import re
 import spacy
 import sys
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 
 class DocumentParser(object):
 
-    def __init__(self, model,
+    def __init__(self, model: "spacy model for any given language.",
                        input_dir: str,
                        match_file: str,
                        match_lang: str = None,
@@ -148,9 +148,9 @@ class DocumentParser(object):
 
     def _generate_lines(self,
                         articles: List[Tuple[Dict[str, str], str]],
-                        model,
+                        model: "spacy model for any given language.",
                         match_lang: str,
-                        cursor) -> Tuple[List[Tuple[str]], List[Tuple[str]]]:
+                        cursor: mysql.connector.cursor_cext.CMySQLCursor) -> Tuple[List[Tuple[str]], List[Tuple[str]]]:
         '''
         generates tuples representing lines in a final output file
         '''
@@ -187,7 +187,10 @@ class DocumentParser(object):
                 match_lines += [tuple(l) for l in lines]
         return match_lines, no_match_lines
 
-    def _find_other_lang_title(self, article_id: str, cursor, match_lang: str) -> str:
+    def _find_other_lang_title(self,
+                               article_id: str,
+                               cursor: mysql.connector.cursor_cext.CMySQLCursor,
+                               match_lang: str) -> Optional[str]:
         '''
         queries the langlinks table for the title of a specific article in another language
         '''
