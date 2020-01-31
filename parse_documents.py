@@ -12,33 +12,27 @@ from URLFinder import URLFinder
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--files', type=int,
-                        help='The number of files handled per process before writing to the output file.',
-                        default=1, metavar='INT')
-    parser.add_argument('-i', '--input', type=str,
-                        help='A directory containing files in medialab document format for parsing.',
-                        metavar='PATH', required=True)
-    parser.add_argument('-m', '--match', type=str,
+    parser.add_argument('-f', '--files', type=int, metavar='INT', default=1,
+                        help='The number of files handled per process before writing to the output file.')
+    parser.add_argument('-i', '--input', type=str, metavar='PATH', required=True,
+                        help='A directory containing files in medialab document format for parsing.')
+    parser.add_argument('-m', '--match', type=str, metavar='PATH',
                         help='Output file for articles with a match. ' + \
-                        'If no --match-lang is provided, all output will be written to this file.',
-                        metavar='PATH')
-    parser.add_argument('-n', '--no-match', type=str,
-                        help='Output file for articles with no match.',
-                        metavar='PATH', default=None)
-    parser.add_argument('-p', '--processes', type=int,
-                        help='The number of processes to be run in parallel.',
-                        default=mp.cpu_count(), metavar='INT')
-    parser.add_argument('-v' ,'--verbose', type=int, metavar='INT',
-                        help='The verbosity level of the DocumentParser.', default=1)
+                        'If no --match-lang is provided, all output will be written to this file.')
+    parser.add_argument('-n', '--no-match', type=str, metavar='PATH', default=None,
+                        help='Output file for articles with no match.')
+    parser.add_argument('-p', '--processes', type=int, metavar='INT', default=mp.cpu_count(),
+                        help='The number of processes to be run in parallel.')
+    parser.add_argument('-v' ,'--verbose', type=int, metavar='INT', default=1,
+                        help='The verbosity level of the DocumentParser.')
     parser.add_argument('--db-user', type=str, metavar='STRING',
                         help='The mysql databank user with access to the langlinks table.')
-    parser.add_argument('--db-host', type=str, metavar='STRING',
-                        help='The host of the databank containing the langlinks table.')
     parser.add_argument('--db-database', type=str, metavar='STRING',
                         help='The mysql database containing the langlinks table.')
-    parser.add_argument('--input-lang', type=str, metavar='STRING',
-                        help='The language of the input files (EN/DE)',
-                        choices=['DE', 'EN'], default='EN')
+    parser.add_argument('--db-host', type=str, metavar='STRING',
+                        help='The host of the databank containing the langlinks table.')
+    parser.add_argument('--input-lang', type=str, metavar='STRING', default='EN', choices=['DE', 'EN'],
+                        help='The language of the input files (DE/EN)')
     parser.add_argument('--input-urls', type=str, metavar='STRING',
                         help='A directory containing files in medialab document format for extracting other language URLs.')
     parser.add_argument('--match-lang', type=str, metavar='STRING', default='de',
