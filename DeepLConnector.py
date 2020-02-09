@@ -46,12 +46,19 @@ class DeepLConnector(object):
         target = 'target_lang=' + target_lang
         splitting = 'split_sentences=0'
         for chunk in sent_chunks:
-            sent_chunk = 'text=' + '&text='.join([urllib.parse.quote(sent) for sent in chunk])
-            get_url = '&'.join(['?'.join([self.url, key]), sent_chunk, source, target, splitting])
-            response = requests.get(get_url)
-            self._debug(f'Response: {response}', level=11)
-            json = response.json()
-            tr_sents = [entry['text'] for entry in json['translations']]
+            response = self._make_request(chunk, key, source, target, splitting)
+            if response.status_code == 414:
+                self._debug(f'414 URI Too Long.', prefix='WARNING:\t')
+                self._debug(f'Sending sentences of this chunk one by one...', prefix='WARNING:\t')
+                tr_sents = []
+                for sent in chunk:
+                    response = self._make_request([sent], key, source, target, splitting)
+                    json = response.json()
+                    tr_sents += [entry['text'] for entry in json['translations']]
+                self._debug(f'Done, resuming normal operation...', prefix='WARNING:\t')
+            else:
+                json = response.json()
+                tr_sents = [entry['text'] for entry in json['translations']]
             translated_sents += tr_sents
             with open(self.save_path, 'a', encoding='utf8') as outfile:
                 for sent in tr_sents:
@@ -62,6 +69,17 @@ class DeepLConnector(object):
                 self._debug(f'Translated {last}/{len(sents)} sentences.')
                 reached.add(last)
         return translated_sents
+
+    def _make_request(self, chunk: List[str], key: str, source: str, target: str, splitting: str) -> requests.models.Response:
+        '''
+        makes a request to the DeepL API v2 translating the sentences in @param chunk
+        and returns a requests.models.Response.
+        '''
+        sent_chunk = 'text=' + '&text='.join([urllib.parse.quote(sent) for sent in chunk])
+        get_url = '&'.join(['?'.join([self.url, key]), sent_chunk, source, target, splitting])
+        response = requests.get(get_url)
+        self._debug(f'{response}', level=11)
+        return response
 
     def _debug(self, message: str, level: int = 1, prefix: str = 'INFO:\t', spacing: str = '', end_spacing: str = ''):
         '''
