@@ -35,8 +35,10 @@ def parse_args() -> argparse.Namespace:
                         help='The language of the input files (DE/EN)')
     parser.add_argument('--input-urls', type=str, metavar='STRING',
                         help='A directory containing files in medialab document format for extracting other language URLs.')
-    parser.add_argument('--match-lang', type=str, metavar='STRING', default='de',
-                        help='The Wikipedia language code for title matches (default: de).')
+    parser.add_argument('--match-lang', type=str, metavar='STRING',
+                        help='The Wikipedia language code for title matches.')
+    parser.add_argument('--no-urls', action='store_true',
+                        help='Running the scripts in single language mode without URL lookups.')
     parser.add_argument('--output-url-file', type=str, metavar='STRING',
                         help='The output file for the tsv with added URL for corresponding articles in other language.')
     args = parser.parse_args()
@@ -44,6 +46,10 @@ def parse_args() -> argparse.Namespace:
 
 
 def main(args: argparse.Namespace):
+    assert args.no_urls is True or bool(args.input_urls and args.output_url_file) != False, \
+        'URL extraction requires an input directory (arg --input-urls) and an output file (arg --output-url-file). ' + \
+        'Use arg --no-urls to skip foreign URL extraction.'
+
     # parsing the documents and writing to a tsv file
     spacy_model = spacy.load('en_core_web_sm') if args.input_lang.upper() == 'EN' else spacy.load('de_core_news_sm')
     databank_login = {'user':args.db_user, 'host':args.db_host, 'database':args.db_database}
@@ -58,10 +64,11 @@ def main(args: argparse.Namespace):
                                 verbose=args.verbose)
     doc_parser.parse_documents()
 
-    # adding a column with URLs of articles in the other language
-    finder = URLFinder(verbose=args.verbose)
-    finder.create_url_dict(args.input_urls)
-    finder.add_url_column(args.match, 7, args.output_url_file)
+    if not args.no_urls:
+        # adding a column with URLs of articles in the other language
+        finder = URLFinder(verbose=args.verbose)
+        finder.create_url_dict(args.input_urls)
+        finder.add_url_column(args.match, 7, args.output_url_file)
         
 
 if __name__ == '__main__':

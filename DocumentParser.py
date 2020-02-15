@@ -117,12 +117,13 @@ class DocumentParser(object):
         '''
         extracts lines and metadata from raw articles and generates lines ready for output.
         '''
-        cnx = mysql.connector.connect(**self.mysql_dict)
-        cursor = cnx.cursor()
+        cnx = mysql.connector.connect(**self.mysql_dict) if self.find_corresponding_article_title else None
+        cursor = cnx.cursor() if self.find_corresponding_article_title else None
         articles = self._extract_articles(doc_file)
         match_lines, no_match_lines = self._generate_lines(articles, self.model, self.match_lang, cursor)
-        cursor.close()
-        cnx.close()
+        if self.find_corresponding_article_title:
+            cursor.close()
+            cnx.close()
         return match_lines, no_match_lines
 
     def _extract_articles(self, doc_file: str) -> List[Tuple[Dict[str, str], str]]:
