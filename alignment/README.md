@@ -51,6 +51,6 @@ PARSED_FILES=(
 )
 OUTPUT=/path/to/output_file.tsv
 
-python3 alignments.py -a "${ALIGNMENT_FILES[@]}" -p "${PARSED_FILES[@]}" -o $OUTPUT -c 6
+python alignments.py -a "${ALIGNMENT_FILES[@]}" -p "${PARSED_FILES[@]}" -o $OUTPUT -c 6
 ```
 
