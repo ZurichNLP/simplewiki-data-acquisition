@@ -60,9 +60,10 @@ class DeepLConnector(object):
                 json = response.json()
                 tr_sents = [entry['text'] for entry in json['translations']]
             translated_sents += tr_sents
-            with open(self.save_path, 'a', encoding='utf8') as outfile:
-                for sent in tr_sents:
-                    outfile.write(sent + '\n')
+            if self.save_path:
+                with open(self.save_path, 'a', encoding='utf8') as outfile:
+                    for sent in tr_sents:
+                        outfile.write(sent + '\n')
             done += len(chunk)
             last = done - (done % prog_info_every)
             if last not in reached and last != 0:

@@ -18,15 +18,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('-o', '--output', type=str, metavar='PATH', required=True,
                         help='The filename of the output file.')
     parser.add_argument('-s', '--save-file', type=str, metavar='PATH', required=True,
-                        help='File for saving copies of freshly translated sentences.')
+                        help='Optional save file for copies of freshly translated sentences.')
     parser.add_argument('-v' ,'--verbose', type=int, metavar='INT', default=1,
                         help='The verbosity level.')
     parser.add_argument('--auth-key', type=str, metavar='STRING', required=True,
                         help='The authentication key for the DeepL API.')
     parser.add_argument('--source-lang', type=str, metavar='STRING', required=True,
-                        help='DeepL API language code for the source language (EN/DE/FR/ES/PT/IT/NL/PL/RU)')
+                        help='DeepL API language code for the source language.')
     parser.add_argument('--target-lang', type=str, metavar='STRING', required=True,
-                        help='DeepL API language code for the target language (EN/DE/FR/ES/PT/IT/NL/PL/RU)')
+                        help='DeepL API language code for the target language.')
     args = parser.parse_args()
     return args
 
