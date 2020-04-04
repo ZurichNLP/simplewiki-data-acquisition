@@ -73,4 +73,4 @@ fairseq-preprocess \
     --destdir $OUT_BIN/simplewiki_de_ls --thresholdtgt 0 --thresholdsrc 0 \
     --workers 8
 
-cp $CODE $OUT_BIN/code
+cp $CODE $OUT_BIN/simplewiki_de_ls/code
