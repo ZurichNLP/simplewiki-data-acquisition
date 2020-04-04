@@ -23,5 +23,6 @@ if [ ! -d "$SUBWORD_NMT" ]; then
     git clone https://github.com/rsennrich/subword-nmt.git $SUBWORD_NMT
 fi
 
+module load generic
 sbatch -D $BASE_TRANSFORMER -o $LOGS/slurm-%j-prepare-de-ls-data.out \
     $BASE_TRANSFORMER/job-prepare-de-ls-data.sh $REPO

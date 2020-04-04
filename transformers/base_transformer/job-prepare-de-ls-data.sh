@@ -27,7 +27,7 @@ OUT_BIN=$BASE_TRANSFORMER/data-bin
 
 echo "Preprocessing data..."
 for l in $SRC $TGT; do
-    for c in train test; do
+    for c in train test valid; do
         cat $DATA/de_ls/$c.$l \
         | perl $MOSES/scripts/tokenizer/normalize-punctuation.perl -l de \
         | perl $MOSES/scripts/tokenizer/remove-non-printing-char.perl \
@@ -47,7 +47,7 @@ echo "Learning BPE on $CONCAT..."
 python $SUBWORD_NMT/subword_nmt/learn_bpe.py -s 10000 < $CONCAT > $CODE
 
 for l in $SRC $TGT; do
-    for c in train test; do
+    for c in train test valid; do
         INFILE=$DATA/de_ls/tmp/$c.tok.$l
         echo "Applying BPE to $INFILE..."
         python $SUBWORD_NMT/subword_nmt/apply_bpe.py -c $CODE \
@@ -61,13 +61,15 @@ perl $MOSES/scripts/training/clean-corpus-n.perl -ratio 1.5 $DATA/de_ls/tmp/trai
 
 cp $DATA/de_ls/tmp/test.bpe.$SRC $OUT_TXT/test.$SRC
 cp $DATA/de_ls/tmp/test.bpe.$TGT $OUT_TXT/test.$TGT
+cp $DATA/de_ls/tmp/valid.bpe.$SRC $OUT_TXT/valid.$SRC
+cp $DATA/de_ls/tmp/valid.bpe.$TGT $OUT_TXT/valid.$TGT
 
 rm -f $OUT_BIN/simplewiki_de_ls/dict.de.txt $OUT_BIN/simplewiki_de_ls/dict.ls.txt
 
 fairseq-preprocess \
     --joined-dictionary \
     --source-lang de --target-lang ls \
-    --trainpref $OUT_TXT/train --testpref $OUT_TXT/test \
+    --trainpref $OUT_TXT/train --testpref $OUT_TXT/test --validpref $OUT_TXT/valid \
     --destdir $OUT_BIN/simplewiki_de_ls --thresholdtgt 0 --thresholdsrc 0 \
     --workers 8
 
