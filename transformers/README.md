@@ -28,7 +28,7 @@ bash install_packages.sh
 
 
 
-## Training a Transformer Base Model
+## Training a Baseline Transformer Model
 
 ### Data
 
@@ -46,13 +46,13 @@ This step normalizes and tokenizes the data, applies BPE and uses fairseq to bin
 
 ### Training
 
-Training a transformer base model:
+Training a transformer baseline model:
 
 ```bash
 bash base_transformer/train_base_transformer.sh
 ```
 
-This trains a transformer translation model on the preprocessed data. The training has an early stopping patience of 10 and uses the BLEU score on the validation set as the metric.
+This trains a transformer translation model on the preprocessed data. The training has an early stopping patience of 10 and uses the BLEU score on the validation set to decide when to stop training.
 
 ### Scoring
 
@@ -60,6 +60,76 @@ Scoring the model:
 
 ```bash
 bash base_transformer/score_base_transformer.sh
+```
+
+The BLEU score is calculated on the postprocessed and detokenized test set.
+
+
+
+## Training a Transformer Model with Back-Translation
+
+### Data
+
+The path to the parallel data is `simplewiki_project/data/de_ls/`. This directory contains six files: `{train,test,valid}.{de,ls}`.
+
+The file `simplewiki_project/data/simple_ls/train.ls` contains the monolingual target data.
+
+### Preprocessing
+
+To preprocess the data, please use the following command:
+
+```bash
+bash backtranslation/prepare_data.sh
+```
+
+This prepares the monolingual data in the exact same way as for the baseline model. Additionally, the monolingual data is tokenized, BPE is applied and duplicate lines are removed. It is being split in chunks of size 100'000 which are binarized individually.
+
+### Training a Reverse Model for Back-Translation
+
+Training a reverse model to translate simplified German to German:
+
+```bash
+bash backtranslation/train_reverse_model.sh
+```
+
+This trains a transformer translation model on the parallel data. The training has an early stopping patience of 10 and uses the BLEU score on the validation set to decide when to stop training.
+
+Evaluate the model to make sure it is well trained:
+
+```bash
+bash backtranslation/score_reverse_model.sh
+```
+
+### Generating Back-Translations
+
+Translating the monolingual chunks:
+
+```bash
+bash backtranslation/generate_bt.sh
+```
+
+Extracting the back-translations, applying length and ration filters and symlinking with the parallel data to create a combined dataset `simplewiki_project/transformers/backtranslation/data-bin/simplewiki_de_ls_para_plus_bt`:
+
+```bash
+bash backtranslation/create_combined_dataset.sh
+```
+
+### Training a Model on the Combined Data
+
+Training a model on the combined data:
+
+```bash
+bash backtranslation/train_bt_model.sh
+```
+
+Batches contain a roughly equal amount of parallel source data and back-translated (synthetic) source data.
+
+### Scoring
+
+Scoring the model:
+
+```bash
+bash backtranslation/score_bt_model.sh
 ```
 
 The BLEU score is calculated on the postprocessed and detokenized test set.
