@@ -41,6 +41,6 @@ fairseq-train $COMBINED \
     --save-dir $CHECKPOINT_DIR \
     --patience 10
 
-cp $DATA_BIN/simplewiki_de_ls/code $CHECKPOINT_DIR/code
-cp $DATA_BIN/simplewiki_de_ls/dict.de.txt $CHECKPOINT_DIR/dict.de.txt
-cp $DATA_BIN/simplewiki_de_ls/dict.ls.txt $CHECKPOINT_DIR/dict.ls.txt
+cp $DATA_BIN/simplewiki_de_ls_para/code $CHECKPOINT_DIR/code
+cp $DATA_BIN/simplewiki_de_ls_para/dict.de.txt $CHECKPOINT_DIR/dict.de.txt
+cp $DATA_BIN/simplewiki_de_ls_para/dict.ls.txt $CHECKPOINT_DIR/dict.ls.txt
