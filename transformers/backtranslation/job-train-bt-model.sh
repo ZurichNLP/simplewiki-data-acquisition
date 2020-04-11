@@ -2,7 +2,7 @@
 #SBATCH --time=72:00:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=16G
-#SBATCH --gres=gpu:Tesla-V100:1
+#SBATCH --gres=gpu:1
 #SBATCH --qos=vesta
 #SBATCH --partition=volta
 
@@ -20,11 +20,7 @@ DATA_BIN=$BACKTRANSLATION/data-bin
 COMBINED=$BACKTRANSLATION/data-bin/simplewiki_de_ls_para_plus_bt
 CHECKPOINT_DIR=$BACKTRANSLATION/checkpoints/checkpoints_de_ls_para_plus_bt
 
-# --upsample-primary: multiplication factor on how often parallel data is visited
-# para has 52805 sents; bt data has around 725000
-# factor 14 creates a ratio of around 1:1
 fairseq-train $COMBINED \
-    --upsample-primary 14 \
     --source-lang de --target-lang ls \
     --arch transformer --share-decoder-input-output-embed \
     --optimizer adam --adam-betas '(0.9, 0.98)' --clip-norm 0.0 \

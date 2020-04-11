@@ -24,8 +24,13 @@ COMBINED=$BACKTRANSLATION/data-bin/simplewiki_de_ls_para_plus_bt
 echo "Extracting back-translations from out files..."
 python $TRANSFORMERS/software/fairseq/examples/backtranslation/extract_bt_data.py \
     --minlen 1 --maxlen 250 --ratio 1.5 \
-    --output $BT_TXT/bt_data --srclang de --tgtlang ls \
+    --output $BT_TXT/bt_data_full --srclang de --tgtlang ls \
     $BT_OUT/bt.chunk*.out
+
+paste $BT_TXT/bt_data_full.de $BT_TXT/bt_data_full.ls \
+| shuf \
+| awk -F '\t' -v BT_TXT="$BT_TXT" \
+    '{if (NR <= 52805) print $1 > BT_TXT"/bt_data.de"; if (NR <= 52805) print $2 > BT_TXT"/bt_data.ls";}'
 
 echo "Binarizing back-translation data..."
 fairseq-preprocess \
