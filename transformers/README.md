@@ -1,12 +1,12 @@
 # Training Transformer Models for Translation
 
-Scripts in this section train translation models for translation into simplified German (Leichte Sprache; `ls` was used as the ending for files.).
+Scripts in this section train translation models for translation into simplified German (`ls` was used as the ending for files.).
 
 
 
 ## Remarks
 
-- These scripts use [conda](https://docs.conda.io/en/latest/) to create a virtual environment. Scripts for creating the environment and installing the required packages are provided.
+- The scripts use [conda](https://docs.conda.io/en/latest/) to create a virtual environment. Scripts for creating the environment and installing the required packages are provided.
 - [slurm](https://slurm.schedmd.com/documentation.html) is used to submit jobs.
 - Model training is done with [fairseq](https://github.com/pytorch/fairseq).
 
@@ -20,7 +20,9 @@ To create a virtual environment, please use the following command.
 bash create_virtualenv.sh
 ```
 
-Please activate the environment. All further steps assume the environment is active. To install the necessary software:
+Please activate the environment. **All further steps assume the environment is active.** 
+
+To install the necessary software:
 
 ```bash
 bash install_packages.sh
@@ -32,7 +34,7 @@ bash install_packages.sh
 
 ### Data
 
-The path to the data in these scripts is `simplewiki_project/data/de_ls/`. This directory contains six files: `{train,test,valid}.{de,ls}`.
+The default path to the data in these scripts is `simplewiki_project/data/de_ls/`. This directory contains six files: `{train,test,valid}.{de,ls}`. Please change the paths accordingly.
 
 ### Preprocessing
 
@@ -42,7 +44,7 @@ To preprocess the data, please use the following command:
 bash base_transformer/prepare_de_ls_data.sh
 ```
 
-This step normalizes and tokenizes the data, applies BPE and uses fairseq to binarize the data.
+This step normalizes and tokenizes the data, applies BPE and uses `fairseq` to binarize the data.
 
 ### Training
 
@@ -70,9 +72,7 @@ The BLEU score is calculated on the postprocessed and detokenized test set.
 
 ### Data
 
-The path to the parallel data is `simplewiki_project/data/de_ls/`. This directory contains six files: `{train,test,valid}.{de,ls}`.
-
-The file `simplewiki_project/data/simple_ls/train.ls` contains the monolingual target data.
+The path to the parallel data is `simplewiki_project/data/de_ls/`. This directory contains six files: `{train,test,valid}.{de,ls}`. The file `simplewiki_project/data/simple_ls/train.ls` contains the monolingual target data. Please change the paths accordingly.
 
 ### Preprocessing
 
@@ -82,7 +82,7 @@ To preprocess the data, please use the following command:
 bash backtranslation/prepare_data.sh
 ```
 
-This prepares the monolingual data in the exact same way as for the baseline model. Additionally, the monolingual data is tokenized, BPE is applied and duplicate lines are removed. It is being split in chunks of size 100'000 which are binarized individually.
+This prepares the parallel data in the exact same way as for the baseline model. Additionally, the monolingual data is tokenized, BPE is applied and duplicate lines are removed. It is being split in chunks of size 100'000 which are binarized individually.
 
 ### Training a Reverse Model for Back-Translation
 
@@ -108,11 +108,15 @@ Translating the monolingual chunks:
 bash backtranslation/generate_bt.sh
 ```
 
+Please rerun the script after translation has completed to verify the number of translations that were produced.
+
 Extracting the back-translations, applying length and ration filters and symlinking with the parallel data to create a combined dataset `simplewiki_project/transformers/backtranslation/data-bin/simplewiki_de_ls_para_plus_bt`:
 
 ```bash
 bash backtranslation/create_combined_dataset.sh
 ```
+
+The combined dataset contains parallel and back-translated data in a 1:1 ratio.
 
 ### Training a Model on the Combined Data
 
@@ -121,8 +125,6 @@ Training a model on the combined data:
 ```bash
 bash backtranslation/train_bt_model.sh
 ```
-
-Batches contain a roughly equal amount of parallel source data and back-translated (synthetic) source data.
 
 ### Scoring
 
