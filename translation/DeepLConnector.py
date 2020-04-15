@@ -14,6 +14,7 @@ class DeepLConnector(object):
         '''
         Args:
         auth_key    the authentification key to access the DeepL API.
+        save_path   optional output file for saving translations directly.
         verbose     the verbosity level.
         '''
         self.url = 'https://api.deepl.com/v2/translate'
@@ -27,14 +28,15 @@ class DeepLConnector(object):
 
         Args:
         sents       a list of sentences to be translated.
-        source_lang the source language.
+        source_lang the source language ('AUTO' for automatic detection).
         target_lang the target language.
 
         Returns:
         translated_sents    a list of translated sentences.
         '''
         self._debug(f'Sentences to translate: {len(sents)}')
-        open(self.save_path, 'w').close()
+        if self.save_path:
+            open(self.save_path, 'w').close()
         prog_info_every = len(sents) // 100 if len(sents) // 100 >= 1 else 1
         done = 0
         reached = set()
@@ -42,7 +44,7 @@ class DeepLConnector(object):
         chunk_size = 25
         sent_chunks = [sents[i * chunk_size:(i+1) * chunk_size] for i in range((len(sents) + chunk_size - 1) // chunk_size)]
         key = 'auth_key=' + self.__auth_key
-        source = 'source_lang=' + source_lang
+        source = 'source_lang=' + source_lang if source_lang != 'AUTO' else None
         target = 'target_lang=' + target_lang
         splitting = 'split_sentences=0'
         for chunk in sent_chunks:
@@ -77,7 +79,10 @@ class DeepLConnector(object):
         and returns a requests.models.Response.
         '''
         sent_chunk = 'text=' + '&text='.join([urllib.parse.quote(sent) for sent in chunk])
-        get_url = '&'.join(['?'.join([self.url, key]), sent_chunk, source, target, splitting])
+        if source:
+            get_url = '&'.join(['?'.join([self.url, key]), sent_chunk, source, target, splitting])
+        else:
+            get_url = '&'.join(['?'.join([self.url, key]), sent_chunk, target, splitting])
         response = requests.get(get_url)
         self._debug(f'{response}', level=11)
         return response
