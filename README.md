@@ -11,6 +11,8 @@ The scripts in this repository were created in the context of working with data 
 
 Further information and examples can be found in the respective subdirectories.
 
+The "misc" directory contains small utility scripts for various tasks.
+
 ### Requirements:
 
 - Python 3.6
