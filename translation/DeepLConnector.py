@@ -78,7 +78,7 @@ class DeepLConnector(object):
         makes a request to the DeepL API v2 translating the sentences in @param chunk
         and returns a requests.models.Response.
         '''
-        sent_chunk = 'text=' + '&text='.join([urllib.parse.quote(sent) for sent in chunk])
+        sent_chunk = 'text=' + '&text='.join([urllib.parse.quote(str(sent)) for sent in chunk])
         if source:
             get_url = '&'.join(['?'.join([self.url, key]), sent_chunk, source, target, splitting])
         else:
