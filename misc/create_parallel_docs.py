@@ -5,8 +5,6 @@ import re
 import sys
 from typing import Dict, IO, Tuple
 
-import pandas as pd
-
 
 def parse_args(): # python3 create_parallel_docs.py --simple-tsv simplede_all.tsv --de-tsv de.tsv --out-dir my_out
     parser = argparse.ArgumentParser()
@@ -56,7 +54,7 @@ def map_tsv(tsv_file: IO) -> Dict[int, Tuple[int, int]]:
 
     mapping_dict[last_id] = (document_start, article_length)
 
-    sys.stderr.write(f"Done, mapped {len(mapping_dict)} articles to lines.\n")
+    sys.stderr.write(f"Done, mapped {len(mapping_dict)} unique articles to lines.\n")
     return mapping_dict
 
 
@@ -114,13 +112,16 @@ def create_doc_pairs(simple_tsv: IO,
             output_prefix = os.path.join(
                                 output_dir,
                                 last_line["simple_article_id"] + "_" + de_article_id)
-            with open(output_prefix + '.simplede', 'w') as outfile:
-                for last_line in last_article_lines:
-                    outfile.write(last_line + '\n')
-            write_de_article(lookup_dict[int(de_article_id)][0],
-                             lookup_dict[int(de_article_id)][1],
-                             de_tsv,
-                             output_prefix + '.de')
+            if int(de_article_id) in lookup_dict:
+                with open(output_prefix + '.simplede', 'w') as outfile:
+                    for l in last_article_lines:
+                        outfile.write(l + '\n')
+                write_de_article(lookup_dict[int(de_article_id)][0],
+                                 lookup_dict[int(de_article_id)][1],
+                                 de_tsv,
+                                 output_prefix + '.de')
+
+            last_article_lines = []
 
             completed += 1
             if completed % 100000 == 0:
@@ -134,13 +135,16 @@ def create_doc_pairs(simple_tsv: IO,
     output_prefix = os.path.join(
                         output_dir,
                         last_line["simple_article_id"] + "-" + de_article_id)
-    with open(output_prefix + '.simplede', 'w') as outfile:
-        for line in last_article_lines:
-            outfile.write(line)
-    write_de_article(lookup_dict[int(de_article_id)][0],
-                     lookup_dict[int(de_article_id)][1],
-                     de_tsv,
-                     output_prefix + '.de')
+    if int(de_article_id) in lookup_dict:
+        with open(output_prefix + '.simplede', 'w') as outfile:
+            for line in last_article_lines:
+                outfile.write(line)
+        write_de_article(lookup_dict[int(de_article_id)][0],
+                         lookup_dict[int(de_article_id)][1],
+                         de_tsv,
+                         output_prefix + '.de')
+
+    completed += 1
 
     sys.stderr.write(f"Done, created {completed} output documents.\n")
 
