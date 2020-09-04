@@ -51,7 +51,7 @@ def main(args: argparse.Namespace):
         'Use arg --no-urls to skip foreign URL extraction.'
 
     # parsing the documents and writing to a tsv file
-    spacy_model = spacy.load('en_core_web_sm') if args.input_lang.upper() == 'EN' else spacy.load('de_core_news_sm')
+    spacy_model = spacy.load('en_core_web_sm') if args.input_lang.upper() == 'EN' else spacy.load('de_core_news_lg', disable=['ner', 'tagger'])
     databank_login = {'user':args.db_user, 'host':args.db_host, 'database':args.db_database}
     doc_parser = DocumentParser(spacy_model,
                                 args.input,

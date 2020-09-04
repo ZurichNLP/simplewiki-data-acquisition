@@ -162,22 +162,32 @@ class DocumentParser(object):
             section_name = 'Summary'
             section_id = 1
             sent_id = 1
+            section_str = ''
             for line in text.split('\n'):
                 # filtering out empty lines and the title line
                 if not line.startswith('\n') and not line == attrs['title']:
                     # the beginning of a new section
                     if line.startswith('Section::::'):
+                        if section_str:
+                            for sent in model(section_str.strip()).sents:
+                                sent = str(sent)
+                                lin = [attrs['id'], section_id, sent_id, attrs['url'],
+                                       attrs['title'], section_name, sent]
+                                lines.append(lin)
+                                sent_id += 1
+                        section_str = ''
                         section_id += 1
                         section_name = line.replace('Section::::', '').rstrip('.')
                     # normal text rows
                     else:
-                        doc = model(line)
-                        for sent in doc.sents:
-                            sent = str(sent)
-                            lin = [attrs['id'], section_id, sent_id, attrs['url'], 
-                                   attrs['title'], section_name, sent]
-                            lines.append(lin)
-                            sent_id += 1
+                        section_str += ' ' + line.strip()
+            if section_str:
+                for sent in model(section_str.strip()).sents:
+                    sent = str(sent)
+                    lin = [attrs['id'], section_id, sent_id, attrs['url'],
+                           attrs['title'], section_name, sent]
+                    lines.append(lin)
+                    sent_id += 1
             if self.find_corresponding_article_title:
                 matched_title = self._find_other_lang_title(attrs['id'], cursor, match_lang)
                 if matched_title:
