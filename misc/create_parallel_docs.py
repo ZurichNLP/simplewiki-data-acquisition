@@ -137,8 +137,8 @@ def create_doc_pairs(simple_tsv: IO,
                         last_line["simple_article_id"] + "-" + de_article_id)
     if int(de_article_id) in lookup_dict:
         with open(output_prefix + '.simplede', 'w') as outfile:
-            for line in last_article_lines:
-                outfile.write(line)
+            for l in last_article_lines:
+                outfile.write(l + '\n')
         write_de_article(lookup_dict[int(de_article_id)][0],
                          lookup_dict[int(de_article_id)][1],
                          de_tsv,
