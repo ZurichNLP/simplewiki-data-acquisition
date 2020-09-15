@@ -7,16 +7,16 @@ import mysql.connector
 import os
 import pathos.multiprocessing as mp
 import re
-import spacy
 import sys
-
 from typing import Dict, List, Optional, Tuple
+
+from mosestokenizer import MosesSentenceSplitter
 
 
 class DocumentParser(object):
 
-    def __init__(self, model: "spacy model for any given language.",
-                       input_dir: str,
+    def __init__(self, input_dir: str,
+                       input_lang: str,
                        match_file: str,
                        match_lang: str = None,
                        no_match_file: str = None,
@@ -26,9 +26,9 @@ class DocumentParser(object):
                        verbose: int = 1):
         '''
         Args:
-        model           a spacy model used to tokenize text into sentences.
         input_dir       a directory containing files in the medialab document format.
                             http://medialab.di.unipi.it/wiki/Document_Format
+        input_lang      language the input (used for sentence splitting)
         match_file      output file for articles with a match. if no @param match_lang is provided,
                             all output will be written to this file.
         match_lang      the wikipedia language code for which titles will be queried in the langlinks table.
@@ -39,8 +39,8 @@ class DocumentParser(object):
         n_files         the number of files handled per process before writing to the output file.
         verbose         the verbosity level.
         '''
-        self.model = model
         self.input_dir = input_dir
+        self.input_lang = input_lang
         self.match_file = match_file
         self.match_lang = match_lang
         self.no_match_file = no_match_file
@@ -120,7 +120,7 @@ class DocumentParser(object):
         cnx = mysql.connector.connect(**self.mysql_dict) if self.find_corresponding_article_title else None
         cursor = cnx.cursor() if self.find_corresponding_article_title else None
         articles = self._extract_articles(doc_file)
-        match_lines, no_match_lines = self._generate_lines(articles, self.model, self.match_lang, cursor)
+        match_lines, no_match_lines = self._generate_lines(articles, self.match_lang, self.input_lang, cursor)
         if self.find_corresponding_article_title:
             cursor.close()
             cnx.close()
@@ -140,67 +140,66 @@ class DocumentParser(object):
                     contents = ''
                 elif line.startswith('<doc '):
                     head = line.lstrip('<doc ').rstrip('>')
-                    attributes['id'] = re.search(r'id=(\S*) ', head).group(1).strip('"')
-                    attributes['url'] = re.search(r'url=(\S*) ', head).group(1).strip('"')
-                    attributes['title'] = re.search(r'title=(.*")', head).group(1).strip('"')
+                    attributes['id'] = re.search(r'id=(\S*)', head).group(1).strip('">')
+                    attributes['url'] = re.search(r'url=(\S*)', head).group(1).strip('">')
+                    attributes['title'] = re.search(r'title=(\S*)', head).group(1).strip('">')
                 else:
                     contents += line
         return articles
 
     def _generate_lines(self,
                         articles: List[Tuple[Dict[str, str], str]],
-                        model: "spacy model for any given language.",
                         match_lang: str,
-                        cursor: mysql.connector.cursor_cext.CMySQLCursor) -> Tuple[List[Tuple[str]], List[Tuple[str]]]:
+                        input_lang: str,
+                        cursor: "CMySQLCursor") -> Tuple[List[Tuple[str]], List[Tuple[str]]]:
         '''
         generates tuples representing lines in a final output file
         '''
         match_lines = []
         no_match_lines = []
-        for attrs, text in articles:
-            lines = []
-            section_name = 'Summary'
-            section_id = 1
-            sent_id = 1
-            section_str = ''
-            for line in text.split('\n'):
-                # filtering out empty lines and the title line
-                if not line.startswith('\n') and not line == attrs['title']:
-                    # the beginning of a new section
-                    if line.startswith('Section::::'):
-                        if section_str:
-                            for sent in model(section_str.strip()).sents:
-                                sent = str(sent)
-                                lin = [attrs['id'], section_id, sent_id, attrs['url'],
-                                       attrs['title'], section_name, sent]
-                                lines.append(lin)
-                                sent_id += 1
-                        section_str = ''
-                        section_id += 1
-                        section_name = line.replace('Section::::', '').rstrip('.')
-                    # normal text rows
+        with MosesSentenceSplitter(input_lang) as splitsents:
+            for attrs, text in articles:
+                lines = []
+                section_name = 'Summary'
+                section_id = 1
+                sent_id = 1
+                section_str = ''
+                for line in text.split('\n'):
+                    # filtering out empty lines and the title line
+                    if not line.startswith('\n') and not line == attrs['title']:
+                        # the beginning of a new section
+                        if line.startswith('Section::::'):
+                            if section_str.strip():
+                                for sent in splitsents([section_str]):
+                                    lin = [attrs['id'], section_id, sent_id, attrs['url'],
+                                           attrs['title'], section_name, sent]
+                                    lines.append(lin)
+                                    sent_id += 1
+                            section_str = ''
+                            section_id += 1
+                            section_name = line.replace('Section::::', '').rstrip('.')
+                        # normal text rows
+                        else:
+                            section_str += ' ' + line.strip()
+                if section_str.strip():
+                    for sent in splitsents([section_str]):
+                        lin = [attrs['id'], section_id, sent_id, attrs['url'],
+                               attrs['title'], section_name, sent]
+                        lines.append(lin)
+                        sent_id += 1
+                if self.find_corresponding_article_title:
+                    matched_title = self._find_other_lang_title(attrs['id'], cursor, match_lang)
+                    if matched_title:
+                        match_lines += [tuple(l + [matched_title]) for l in lines]
                     else:
-                        section_str += ' ' + line.strip()
-            if section_str:
-                for sent in model(section_str.strip()).sents:
-                    sent = str(sent)
-                    lin = [attrs['id'], section_id, sent_id, attrs['url'],
-                           attrs['title'], section_name, sent]
-                    lines.append(lin)
-                    sent_id += 1
-            if self.find_corresponding_article_title:
-                matched_title = self._find_other_lang_title(attrs['id'], cursor, match_lang)
-                if matched_title:
-                    match_lines += [tuple(l + [matched_title]) for l in lines]
+                        no_match_lines += [tuple(l) for l in lines]
                 else:
-                    no_match_lines += [tuple(l) for l in lines]
-            else:
-                match_lines += [tuple(l) for l in lines]
+                    match_lines += [tuple(l) for l in lines]
         return match_lines, no_match_lines
 
     def _find_other_lang_title(self,
                                article_id: str,
-                               cursor: mysql.connector.cursor_cext.CMySQLCursor,
+                               cursor: "CMySQLCursor",
                                match_lang: str) -> Optional[str]:
         '''
         queries the langlinks table for the title of a specific article in another language
