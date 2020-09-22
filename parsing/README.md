@@ -27,6 +27,16 @@ Nomascus is the second most common genus (biology) of Gibbon. There are six spec
 
 Raw Wikipedia dumps can be downloaded from [https://dumps.wikimedia.org/](https://dumps.wikimedia.org/).
 
+#### Note
+
+In some languages like German, it is a possibility that some templates (especially numbers) are not resolved correctly by the WikiExtractor. This leads to faulty output in the extracted document:
+
+```
+Puyvert ist eine französische Gemeinde mit Einwohnern (Stand ) im Département Vaucluse in der Region Provence-Alpes-Côte d’Azur.
+```
+
+As a workaround, [cirrussearch database dumps](https://dumps.wikimedia.org/other/cirrussearch/) can be used. A [WikiExtractor fork](https://github.com/nicolasspring/wikiextractor) contains a tweaked `cirrus-extract.py` script that strips references from (German) cirrus output. The method used in the original repository does not work for this specific language.
+
 
 
 ### Output

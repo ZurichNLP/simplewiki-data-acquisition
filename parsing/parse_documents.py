@@ -4,7 +4,6 @@
 
 import argparse
 import pathos.multiprocessing as mp
-import spacy
 
 from DocumentParser import DocumentParser
 from URLFinder import URLFinder
@@ -31,8 +30,8 @@ def parse_args() -> argparse.Namespace:
                         help='The mysql database containing the langlinks table.')
     parser.add_argument('--db-host', type=str, metavar='STRING',
                         help='The host of the databank containing the langlinks table.')
-    parser.add_argument('--input-lang', type=str, metavar='STRING', default='EN', choices=['DE', 'EN'],
-                        help='The language of the input files (DE/EN)')
+    parser.add_argument('--input-lang', type=str, metavar='STRING', default='en',
+                        help='The language of the input files')
     parser.add_argument('--input-urls', type=str, metavar='STRING',
                         help='A directory containing files in medialab document format for extracting other language URLs.')
     parser.add_argument('--match-lang', type=str, metavar='STRING',
@@ -51,10 +50,9 @@ def main(args: argparse.Namespace):
         'Use arg --no-urls to skip foreign URL extraction.'
 
     # parsing the documents and writing to a tsv file
-    spacy_model = spacy.load('en_core_web_sm') if args.input_lang.upper() == 'EN' else spacy.load('de_core_news_sm')
     databank_login = {'user':args.db_user, 'host':args.db_host, 'database':args.db_database}
-    doc_parser = DocumentParser(spacy_model,
-                                args.input,
+    doc_parser = DocumentParser(args.input,
+                                args.input_lang,
                                 args.match,
                                 match_lang=args.match_lang,
                                 no_match_file=args.no_match,

@@ -98,7 +98,7 @@ def create_doc_pairs(simple_tsv: IO,
                          "simple_sent",
                          "de_article_title",
                          "de_url",
-                         "simplede_sent"]
+                         "simpde_sent"]
     completed = 0
     simple_reader = csv.DictReader(simple_tsv, simple_fieldnames, delimiter='\t')
     for line in simple_reader:
@@ -113,7 +113,7 @@ def create_doc_pairs(simple_tsv: IO,
                                 output_dir,
                                 last_line["simple_article_id"] + "_" + de_article_id)
             if int(de_article_id) in lookup_dict:
-                with open(output_prefix + '.simplede', 'w') as outfile:
+                with open(output_prefix + '.simpde', 'w') as outfile:
                     for l in last_article_lines:
                         outfile.write(l + '\n')
                 write_de_article(lookup_dict[int(de_article_id)][0],
@@ -125,9 +125,9 @@ def create_doc_pairs(simple_tsv: IO,
 
             completed += 1
             if completed % 100000 == 0:
-                sys.stderr.write(f"Completed {completed} simplede articles...\n")
+                sys.stderr.write(f"Completed {completed} simpde articles...\n")
 
-        last_article_lines.append(line["simplede_sent"])
+        last_article_lines.append(line["simpde_sent"])
         last_line = line
 
 
@@ -136,7 +136,7 @@ def create_doc_pairs(simple_tsv: IO,
                         output_dir,
                         last_line["simple_article_id"] + "-" + de_article_id)
     if int(de_article_id) in lookup_dict:
-        with open(output_prefix + '.simplede', 'w') as outfile:
+        with open(output_prefix + '.simpde', 'w') as outfile:
             for l in last_article_lines:
                 outfile.write(l + '\n')
         write_de_article(lookup_dict[int(de_article_id)][0],
