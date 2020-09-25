@@ -6,14 +6,23 @@ import sys
 from typing import Dict, IO, Tuple
 
 
-def parse_args(): # python3 create_parallel_docs.py --simple-tsv simplede_all.tsv --de-tsv de.tsv --out-dir my_out
+def parse_args():  # python3 create_parallel_docs.py --simple-tsv simplede_all.tsv --de-tsv de.tsv --out-dir my_out
     parser = argparse.ArgumentParser()
-    parser.add_argument('--simple-tsv', type=argparse.FileType('r'), metavar='PATH',
-                        help='tsv containing simple sentences and information on article pairs')
-    parser.add_argument('--de-tsv', type=argparse.FileType('r'), metavar='PATH',
-                        help='tsv containing the standard german articles')
-    parser.add_argument('--out-dir', type=str, metavar='PATH',
-                        help='output directory for article pairs')
+    parser.add_argument(
+        "--simple-tsv",
+        type=argparse.FileType("r"),
+        metavar="PATH",
+        help="tsv containing simple sentences and information on article pairs",
+    )
+    parser.add_argument(
+        "--de-tsv",
+        type=argparse.FileType("r"),
+        metavar="PATH",
+        help="tsv containing the standard german articles",
+    )
+    parser.add_argument(
+        "--out-dir", type=str, metavar="PATH", help="output directory for article pairs"
+    )
     args = parser.parse_args()
     return args
 
@@ -33,10 +42,10 @@ def map_tsv(tsv_file: IO) -> Dict[int, Tuple[int, int]]:
 
     line = tsv_file.readline()
     while line:
-        article_id = int(line.split('\t')[0])
+        article_id = int(line.split("\t")[0])
         # new article begins
         if article_id != last_id:
-            if last_id == None:
+            if last_id is None:
                 mapping_dict[article_id] = (document_start, article_length)
             else:
                 mapping_dict[last_id] = (document_start, article_length)
@@ -62,25 +71,26 @@ def write_de_article(start: int, n_lines: int, tsv_file: IO, output_path: str):
     """
     writes the de article to the specified file.
     """
-    tsv_file.seek(start)    
-    de_fieldnames = ["de_article_id",
-                     "de_section_id",
-                     "de_sent_id",
-                     "de_url",
-                     "de_article_title",
-                     "de_section_title",
-                     "de_sent"]
-    de_reader = csv.DictReader(tsv_file, de_fieldnames, delimiter='\t')
-    with open(output_path, 'w') as outfile:
+    tsv_file.seek(start)
+    de_fieldnames = [
+        "de_article_id",
+        "de_section_id",
+        "de_sent_id",
+        "de_url",
+        "de_article_title",
+        "de_section_title",
+        "de_sent",
+    ]
+    de_reader = csv.DictReader(tsv_file, de_fieldnames, delimiter="\t")
+    with open(output_path, "w") as outfile:
         for _ in range(n_lines):
             line = next(de_reader)
-            outfile.write(line["de_sent"] + '\n')
+            outfile.write(line["de_sent"] + "\n")
 
 
-def create_doc_pairs(simple_tsv: IO,
-                     de_tsv: IO,
-                     lookup_dict: Dict[int, Tuple[int, int]],
-                     output_dir: str):
+def create_doc_pairs(
+    simple_tsv: IO, de_tsv: IO, lookup_dict: Dict[int, Tuple[int, int]], output_dir: str
+):
     """
     creates parallel document pairs with unique indices
     """
@@ -89,37 +99,40 @@ def create_doc_pairs(simple_tsv: IO,
 
     last_line = None
     last_article_lines = []
-    simple_fieldnames = ["simple_article_id",
-                         "simple_section_id",
-                         "simple_sent_id",
-                         "simple_url",
-                         "simple_article_title",
-                         "simple_section_title",
-                         "simple_sent",
-                         "de_article_title",
-                         "de_url",
-                         "simpde_sent"]
+    simple_fieldnames = [
+        "simple_article_id",
+        "simple_section_id",
+        "simple_sent_id",
+        "simple_url",
+        "simple_article_title",
+        "simple_section_title",
+        "simple_sent",
+        "de_article_title",
+        "de_url",
+        "simpde_sent",
+    ]
     completed = 0
-    simple_reader = csv.DictReader(simple_tsv, simple_fieldnames, delimiter='\t')
+    simple_reader = csv.DictReader(simple_tsv, simple_fieldnames, delimiter="\t")
     for line in simple_reader:
         # no exact match (see https://github.com/nicolasspring/simplewiki_project/blob/master/parsing/README.md#output)
         if line["de_url"] == "NOT_FOUND":
             continue
         # end of an article
-        if (last_line is not None
-            and line["simple_article_id"] != last_line["simple_article_id"]):
+        if last_line is not None and line["simple_article_id"] != last_line["simple_article_id"]:
             de_article_id = id_regex.findall(last_line["de_url"])[0]
             output_prefix = os.path.join(
-                                output_dir,
-                                last_line["simple_article_id"] + "_" + de_article_id)
+                output_dir, last_line["simple_article_id"] + "_" + de_article_id
+            )
             if int(de_article_id) in lookup_dict:
-                with open(output_prefix + '.simpde', 'w') as outfile:
-                    for l in last_article_lines:
-                        outfile.write(l + '\n')
-                write_de_article(lookup_dict[int(de_article_id)][0],
-                                 lookup_dict[int(de_article_id)][1],
-                                 de_tsv,
-                                 output_prefix + '.de')
+                with open(output_prefix + ".simpde", "w") as outfile:
+                    for line in last_article_lines:
+                        outfile.write(line + "\n")
+                write_de_article(
+                    lookup_dict[int(de_article_id)][0],
+                    lookup_dict[int(de_article_id)][1],
+                    de_tsv,
+                    output_prefix + ".de",
+                )
 
             last_article_lines = []
 
@@ -130,24 +143,22 @@ def create_doc_pairs(simple_tsv: IO,
         last_article_lines.append(line["simpde_sent"])
         last_line = line
 
-
     de_article_id = id_regex.findall(last_line["de_url"])[0]
-    output_prefix = os.path.join(
-                        output_dir,
-                        last_line["simple_article_id"] + "-" + de_article_id)
+    output_prefix = os.path.join(output_dir, last_line["simple_article_id"] + "-" + de_article_id)
     if int(de_article_id) in lookup_dict:
-        with open(output_prefix + '.simpde', 'w') as outfile:
-            for l in last_article_lines:
-                outfile.write(l + '\n')
-        write_de_article(lookup_dict[int(de_article_id)][0],
-                         lookup_dict[int(de_article_id)][1],
-                         de_tsv,
-                         output_prefix + '.de')
+        with open(output_prefix + ".simpde", "w") as outfile:
+            for line in last_article_lines:
+                outfile.write(line + "\n")
+        write_de_article(
+            lookup_dict[int(de_article_id)][0],
+            lookup_dict[int(de_article_id)][1],
+            de_tsv,
+            output_prefix + ".de",
+        )
 
     completed += 1
 
     sys.stderr.write(f"Done, created {completed} output documents.\n")
-
 
 
 def main(args: argparse.Namespace):
@@ -155,6 +166,6 @@ def main(args: argparse.Namespace):
     create_doc_pairs(args.simple_tsv, args.de_tsv, de_lines, os.path.abspath(args.out_dir))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_args()
     main(args)
