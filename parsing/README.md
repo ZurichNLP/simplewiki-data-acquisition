@@ -29,7 +29,7 @@ Raw Wikipedia dumps can be downloaded from [https://dumps.wikimedia.org/](https:
 
 #### Note
 
-In some languages like German, it is a possibility that some templates (especially numbers) are not resolved correctly by the WikiExtractor. This leads to faulty output in the extracted document:
+In some languages like German, it is a possibility that some templates (especially numbers) are not resolved correctly by the WikiExtractor. This leads to faulty output in the extracted document (missing numbers in this case):
 
 ```
 Puyvert ist eine französische Gemeinde mit Einwohnern (Stand ) im Département Vaucluse in der Region Provence-Alpes-Côte d’Azur.

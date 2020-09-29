@@ -1,6 +1,6 @@
 # Training Transformer Models for Translation
 
-Scripts in this section train translation models for translation into simplified German (`ls` was used as the ending for files.).
+Scripts in this section train toy models for translation into simplified German (`ls` was used as the ending for files.).
 
 
 
