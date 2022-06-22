@@ -13,7 +13,7 @@ mosestokenizer==1.1.0
 multiprocess==0.70.9
 murmurhash==1.0.2
 mysql-connector-python==8.0.19
-numpy==1.21.0
+numpy==1.22.0
 pandas==1.0.0
 pathos==0.2.5
 pkg-resources==0.0.0
